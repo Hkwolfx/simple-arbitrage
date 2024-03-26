@@ -3,6 +3,20 @@ pragma solidity 0.6.12;
 
 pragma experimental ABIEncoderV2;
 
+library SafeMath {
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
+        return c;
+    }
+
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b <= a, "SafeMath: subtraction overflow");
+        uint256 c = a - b;
+        return c;
+    }
+}
+
 interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint value);
     event Transfer(address indexed from, address indexed to, uint value);
@@ -26,7 +40,36 @@ interface IWETH is IERC20 {
 
 // This contract simply calls multiple targets sequentially, ensuring WETH balance before and after
 
+contract BundleExecutor {
+    address[] private trustedContracts;
+
+    // Add trusted contracts during deployment
+    constructor(address[] memory _trustedContracts) public {
+        trustedContracts = _trustedContracts;
+    }
+
+    // Restrict external calls to trusted addresses
+    modifier onlyTrustedContracts() {
+        bool isTrusted = false;
+        for (uint i = 0; i < trustedContracts.length; i++) {
+            if (msg.sender == trustedContracts[i]) {
+                isTrusted = true;
+                break;
+            }
+        }
+        require(isTrusted, "Caller is not a trusted contract");
+        _;
+    }
+
+    // Function allowing external calls restricted to trusted contracts
+    function executeExternalCall(address target, bytes memory data) external onlyTrustedContracts {
+        // Perform external call to trusted address
+        (bool success, ) = target.call(data);
+        require(success, "External call failed");
+    } }
+
 contract FlashBotsMultiCall {
+     using SafeMath for uint256;
     address private immutable owner;
     address private immutable executor;
     IWETH private constant WETH = IWETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
@@ -78,4 +121,7 @@ contract FlashBotsMultiCall {
         require(_success);
         return _result;
     }
+
+    
 }
+
