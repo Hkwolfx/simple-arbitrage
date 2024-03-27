@@ -9,7 +9,10 @@
     "test": "npx ts-node node_modules/jasmine/bin/jasmine --config=jasmine.json",
     "build": "npx tsc",
     "prepare": "npm run build",
-    "lint": "npx eslint src"
+    "lint": "npx eslint src",
+    "compile": "oz compile",
+    "deploy": "oz deploy",
+    "flatten": "oz flatten"
   },
   "author": "",
   "license": "ISC",

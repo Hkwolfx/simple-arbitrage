@@ -4,17 +4,38 @@ import { BUNDLE_EXECUTOR_ABI } from "./abi";
 import { UniswappyV2EthPair } from "./UniswappyV2EthPair";
 import { FACTORY_ADDRESSES } from "./addresses";
 import { Arbitrage } from "./Arbitrage";
+import { ethers } from 'ethers';
 import { get } from "https"
 import { getDefaultRelaySigningKey } from "./utils";
 import dotenv from 'dotenv';
 
 dotenv.config();
 
+
+
 const ETHEREUM_RPC_URL = process.env.ETHEREUM_RPC_URL || "http://127.0.0.1:8545"
-const PRIVATE_KEY = process.env.PRIVATE_KEY || ""
-const BUNDLE_EXECUTOR_ADDRESS = process.env.BUNDLE_EXECUTOR_ADDRESS || ""
+const PRIVATE_KEY = process.env.PRIVATE_KEY || "0xcdb1f29acb2b04ad3dee3949321bb8fc3d92ceae4f979bc631480c478973bacb"
+const BUNDLE_EXECUTOR_ADDRESS = process.env.BUNDLE_EXECUTOR_ADDRESS || "0x85abad0c96e3aff7a7ff4d95df906f4818cff38b"
 
 const FLASHBOTS_RELAY_SIGNING_KEY = process.env.FLASHBOTS_RELAY_SIGNING_KEY || getDefaultRelaySigningKey();
+
+function isHex(h: string) {
+  const regexp = /^[0-9a-fA-F]{64}$/;
+  return regexp.test(h);
+}
+
+
+if (PRIVATE_KEY !== "") {
+  const message = isHex(PRIVATE_KEY) ? 'Private key is valid, Welcome Commander' : 'Private key is invalid';
+  console.log(message);
+  console.log(process.env.PRIVATE_KEY);
+  console.log(process.env.FLASHBOTS_RELAY_SIGNING_KEY);
+  console.log(process.env.BUNDLE_EXECUTOR_ADDRESS);
+  console.log(process.env.ETHEREUM_RPC_URL);
+} else {
+  console.log('Value is undefined');
+}
+
 
 const MINER_REWARD_PERCENTAGE = parseInt(process.env.MINER_REWARD_PERCENTAGE || "80")
 
@@ -34,10 +55,14 @@ if (FLASHBOTS_RELAY_SIGNING_KEY === "") {
 
 const HEALTHCHECK_URL = process.env.HEALTHCHECK_URL || ""
 
-const provider = new providers.StaticJsonRpcProvider(ETHEREUM_RPC_URL);
+const provider = new ethers.providers.JsonRpcProvider(ETHEREUM_RPC_URL); // replace with your provider
 
-const arbitrageSigningWallet = new Wallet(PRIVATE_KEY);
-const flashbotsRelaySigningWallet = new Wallet(FLASHBOTS_RELAY_SIGNING_KEY);
+// Generate a new private key
+const newWallet = ethers.Wallet.createRandom();
+console.log('New private key:', newWallet.privateKey);
+
+const arbitrageSigningWallet = new Wallet(newWallet.privateKey, provider);
+const flashbotsRelaySigningWallet = new Wallet(newWallet.privateKey, provider);
 
 function healthcheck() {
   if (HEALTHCHECK_URL === "") {
